@@ -1,0 +1,8 @@
+ccxt
+pandas
+numpy
+pytz
+python-telegram-bot
+schedule
+asyncio
+python-dotenv
