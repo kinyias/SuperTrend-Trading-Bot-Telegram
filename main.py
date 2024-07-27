@@ -40,7 +40,6 @@ def calculate_supertrend(df, atr_length, multiplier):
     df['atr'] = calculate_atr(df, atr_length)
     df['basic_upperband'] = hl2 + (multiplier * df['atr'])
     df['basic_lowerband'] = hl2 - (multiplier * df['atr'])
-
     df['upperband'] = 0.0
     df['lowerband'] = 0.0
     df['supertrend'] = 0.0
@@ -49,7 +48,6 @@ def calculate_supertrend(df, atr_length, multiplier):
     for i in range(1, len(df)):
         df.loc[i,'upperband'] = (df['basic_upperband'][i] if df['basic_upperband'][i] < df['upperband'][i - 1] or df['close'][i - 1] > df['upperband'][i - 1] else df['upperband'][i - 1])
         df.loc[i,'lowerband'] = (df['basic_lowerband'][i] if df['basic_lowerband'][i] > df['lowerband'][i - 1] or df['close'][i - 1] < df['lowerband'][i - 1] else df['lowerband'][i - 1])
-        
         if df['trend'][i - 1] == 1:
             df.loc[i,'trend'] = 1 if df['close'][i] > df['lowerband'][i] else -1
         else:
@@ -87,15 +85,17 @@ def fetch_and_send():
         df = fetch_ohlcv(i, timeframe, limit)
         df = calculate_supertrend(df, atr_length, multiplier)
         last_two = df.tail(2)
+        message = "RECOMMENDATION: BUY (Long)\n" + str(i) + "\nCURRENT PRICE: " + str(round(last_two.iloc[1]['close'],2)) + "\nTP: " + str(round(last_two.iloc[1]['close']*1.02,2)) + "\nSL: " + str(round(last_two.iloc[0]['close']*0.995,2))
+        asyncio.run(send_telegram_message(BOT_TOKEN, CHAT_ID, message))  
         # Compare the 'continue_up_trend' values
         # Is up trend can to long
-        if last_two.iloc[0]['continue_up_trend'] != last_two.iloc[1]['continue_up_trend'] and last_two.iloc[1]['continue_up_trend'] == True:
-            message = "RECOMMENDATION: BUY (Long)\n" + str(i) + "\nCURRENT PRICE: " + str(round(last_two.iloc[1]['close'],2)) + "\nTP: " + str(round(last_two.iloc[1]['close']*1.02,2)) + "\nSL: " + str(round(last_two.iloc[0]['close']*0.995,2))
-            asyncio.run(send_telegram_message(BOT_TOKEN, CHAT_ID, message))  
-        # Is down trend can to short
-        if last_two.iloc[0]['continue_down_trend'] != last_two.iloc[1]['continue_down_trend'] and last_two.iloc[1]['continue_down_trend'] == True:
-            message = "RECOMMENDATION: SELL (Short)\n" + str(i) + "\nCURRENT PRICE: " + str(round(last_two.iloc[1]['close'],2)) + "\nTP: " + str(round(last_two.iloc[1]['close']*0.98,2)) + "\nSL: " + str(round(last_two.iloc[0]['close']*1.005,2))
-            asyncio.run(send_telegram_message(BOT_TOKEN, CHAT_ID, message))      
+        # if last_two.iloc[0]['continue_up_trend'] != last_two.iloc[1]['continue_up_trend'] and last_two.iloc[1]['continue_up_trend'] == True:
+        #     message = "RECOMMENDATION: BUY (Long)\n" + str(i) + "\nCURRENT PRICE: " + str(round(last_two.iloc[1]['close'],2)) + "\nTP: " + str(round(last_two.iloc[1]['close']*1.02,2)) + "\nSL: " + str(round(last_two.iloc[0]['close']*0.995,2))
+        #     asyncio.run(send_telegram_message(BOT_TOKEN, CHAT_ID, message))  
+        # # Is down trend can to short
+        # if last_two.iloc[0]['continue_down_trend'] != last_two.iloc[1]['continue_down_trend'] and last_two.iloc[1]['continue_down_trend'] == True:
+        #     message = "RECOMMENDATION: SELL (Short)\n" + str(i) + "\nCURRENT PRICE: " + str(round(last_two.iloc[1]['close'],2)) + "\nTP: " + str(round(last_two.iloc[1]['close']*0.98,2)) + "\nSL: " + str(round(last_two.iloc[0]['close']*1.005,2))
+        #     asyncio.run(send_telegram_message(BOT_TOKEN, CHAT_ID, message))      
     print("On running...") # Check bot are running on server
 
 # Schedule the job every 15 minutes
@@ -105,3 +105,5 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
+
+
